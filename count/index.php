@@ -25,7 +25,7 @@ echo '<div id="content">
 	<tr>
 	<td class="cont_td" style="width:75%;">
 	<h2 class="table">'.wfMsg('title', COUNTERVERSION).'</h2>';
-
+flush();
 
 //Debugging stuff
 function pre( $array ) {
@@ -149,6 +149,10 @@ $namespaces1 = getNamespaces();
 $namespaces = $namespaces1[0];
 $namespaces2 = $namespaces1[1];
 
+if( isset( $_GET['debug'] ) ) {
+	echo "<span style=\"font-size:100%;\">".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+}
+
 //Check if the user is an IP address
 if( preg_match( '/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/', $oldname ) ) {
 	define( 'ISIPADDRESS', true );
@@ -231,6 +235,10 @@ else {
 	@mysql_select_db( "enwiki_p" ) or print mysql_error();
 }
 //Done
+
+if( isset( $_GET['debug'] ) ) {
+	echo "<span style=\"font-size:100%;\">".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+}
 
 $colorcodes = array(
 	'admin' => '#FF5555',
@@ -322,15 +330,19 @@ function getColor($month_namespace_totals, $max_width, $total, $month) {
 
 
 function getEditCounts() {
-	global $name, $namespaces, $http, $oldwiki, $oldlang, $oldname;
+	global $name, $namespaces, $http, $oldwiki, $oldlang, $oldname, $time;
 
+	if( isset( $_GET['debug'] ) ) {
+		echo "<span style=\"font-size:100%;\">A".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+		flush();
+	}
+	
 	//Get total edits
 	if( ISIPADDRESS == false ) {//IP addresses don't have a field in the user table, so IPs must be done the old way.
 		$query = "SELECT user_editcount, user_id FROM user WHERE user_name = '".$name."';";
 		$result = mysql_query( $query );
 		if( !$result ) toDie( wfMsg('mysqlerror', mysql_error() ) );
 		$row = mysql_fetch_assoc( $result );
-		$edit_count_total = $row['user_editcount'];
 		$uid = $row['user_id'];
 		if( $uid == 0 ) {
 			toDie( wfMsg('nosuchuser', $name ) );
@@ -338,6 +350,21 @@ function getEditCounts() {
 	}
 	unset( $row, $query, $result );
 	
+	$query = 'SELECT COUNT(*) AS count FROM archive WHERE ar_user_text = \''.$name.'\'';
+	$result = mysql_query( $query );
+	$row = mysql_fetch_assoc( $result );
+	$edit_count_deleted = $row['count'];
+	unset( $row, $query, $result );
+	
+	$query = 'SELECT COUNT(*) AS count FROM revision WHERE rev_user_text = \''.$name.'\'';
+	$result = mysql_query( $query );
+	$row = mysql_fetch_assoc( $result );
+	$edit_count_live = $row['count'];
+	unset( $row, $query, $result );
+	
+	if( isset( $_GET['debug'] ) ) {
+		echo "<span style=\"font-size:100%;\">A".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+	}
 
 	if( ISIPADDRESS == false ) {//IPs don't have user groups!
 		/*$groups = getUrl( 'http://'.$oldlang.'.'.$oldwiki.'.org/w/api.php?action=query&list=users&ususers='.urlencode( $oldname ).'&usprop=groups&format=php', false );
@@ -352,22 +379,20 @@ function getEditCounts() {
 			$groups[] = $row['ug_group'];
 		}
 	}
-
-
-	if( ISIPADDRESS == false ) {//IPs don't have a user ID
-		$query = "SELECT /* SLOW_OK */ rev_timestamp,page_title,page_namespace,rev_comment FROM revision JOIN page ON page_id = rev_page WHERE rev_user = '".$uid."' ORDER BY rev_timestamp ASC;";
-	}
-	else {
-		$query = "SELECT /* SLOW_OK */ rev_timestamp,page_title,page_namespace,rev_comment FROM revision JOIN page ON page_id = rev_page WHERE rev_user_text = '".$name."' ORDER BY rev_timestamp ASC;";
-	}
 	
+	if( isset( $_GET['debug'] ) ) {
+		echo "<span style=\"font-size:100%;\">A".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+	}
+
+	$query = "SELECT /* SLOW_OK */ rev_timestamp,page_title,page_namespace,rev_comment FROM revision JOIN page ON page_id = rev_page WHERE rev_user_text = '".$name."' ORDER BY rev_timestamp ASC;";
 	$result = mysql_query( $query );
+	
 	if( !$result ) toDie( wfMsg('mysqlerror', mysql_error() ) );
 	unset($query);
 
-
-	$edit_count_live = mysql_num_rows( $result );
-	if( ISIPADDRESS == true ) { $edit_count_total = $edit_count_live; }//$edit_count_total was not set above if the user is an IP
+	if( isset( $_GET['debug'] ) ) {
+		echo "<span style=\"font-size:100%;\">A".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+	}
 	
 	//Initialize some arrays
 	$months = array();
@@ -377,6 +402,10 @@ function getEditCounts() {
 	$namespace_ids = array();
 	///$edit_summaries = array();
 	//$month_namespace_totals = array();
+	
+	if( isset( $_GET['debug'] ) ) {
+		echo "<span style=\"font-size:100%;\">A".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+	}
 	
 	while ( $row = mysql_fetch_assoc( $result ) ) {
 		//if( !isset($edit_summaries['yes'][substr( $row['rev_timestamp'], 0, 6 )])) {
@@ -411,9 +440,15 @@ function getEditCounts() {
 		
 			$unique_articles[$row['page_title']]++;
 		}
-	}//That was a long while statement.public_html
+	}
+	
+	if( isset( $_GET['debug'] ) ) {
+		echo "<span style=\"font-size:100%;\">A".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+	}
 
 	$last_month = strtotime( date( 'Ymd' ) );
+	
+	$edit_count_total = $edit_count_live + $edit_count_deleted;
 	
 	$returnArray = array(
 		$edit_count_total, //$temp[0];
@@ -429,6 +464,7 @@ function getEditCounts() {
 		$unique_articles, //$temp[10];
 		$namespace_ids, //$temp[11];
 		$month_namespace_totals, //$temp[12]
+		$edit_count_deleted, //$temp[13]
 		//$edit_summaries //$temp[13]
 	);
 	
@@ -437,7 +473,25 @@ function getEditCounts() {
 	return $returnArray;
 }
 
+if( isset( $_GET['debug'] ) ) {
+	echo "<span style=\"font-size:100%;\">".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+}
 
+if( isset( $_GET['debug'] ) ) {
+	echo "<span style=\"font-size:100%;\">".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+}
+
+if ($replag[0] > 120) {
+	echo '<h2 class="replag">'.wfMsg('highreplag', $replag[1]).'</h2>';
+}
+unset( $replag );
+
+//Output general stats
+echo '<h2>'.wfMsg('generalinfo').'</h2>';
+
+echo wfMsg('username').": <a href=\"http://$oldlang.$oldwiki.org/wiki/User:$oldname\">$oldname</a><br />";
+
+flush();
 $temp = getEditCounts();
 $replag = getReplag();
 $total = $temp[0];
@@ -454,19 +508,9 @@ $unique_articles = $temp[10];
 $namespace_ids = $temp[11];
 $month_namespace_totals = $temp[12];
 //$edit_summaries = $temp[13];
-$deleted = $total - $live;
+$deleted = $temp[13];
 
 unset( $temp );//Just neatness
-
-if ($replag[0] > 120) {
-	echo '<h2 class="replag">'.wfMsg('highreplag', $replag[1]).'</h2>';
-}
-unset( $replag );
-
-//Output general stats
-echo '<h2>'.wfMsg('generalinfo').'</h2>';
-
-echo wfMsg('username').": <a href=\"http://$oldlang.$oldwiki.org/wiki/User:$oldname\">$oldname</a><br />";
 
 if( isset( $groups[0] ) ) {//Because IPs and other new users don't have groups
 	echo wfMsg('usergroups').": ";
@@ -496,6 +540,10 @@ if( $live == 0 ) {
 	toDie( "<br /><br />User does not have any contribs.\n");
 }
 
+if( isset( $_GET['debug'] ) ) {
+	echo "<span style=\"font-size:100%;\">".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+}
+
 
 echo '<h2>'.wfMsg('nstotal').'</h2>';//Maybe this table could be prettier
 echo "<table>";
@@ -523,9 +571,17 @@ foreach ( $namespace_totals as $key => $value ) {
 echo "</table>\n\n";
 unset( $namespace_totals );
 
+if( isset( $_GET['debug'] ) ) {
+	echo "<span style=\"font-size:100%;\">".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+}
+flush();
 echo "<img src=\"";
 echo "http://toolserver.org/~soxred93/count/graph.php?pcts=".urlencode(serialize($serdata))."&nsnames=".urlencode(serialize($sernames))."&colors=".urlencode(serialize($sercolors));
 echo "\" alt=\"Graph\" />";
+
+if( isset( $_GET['debug'] ) ) {
+	echo "<span style=\"font-size:100%;\">".wfMsg('executed', number_format(microtime( 1 ) - $time, 2, '.', ''))."</span>";
+}
 
 $months2 = array();
 $last_monthkey = null;
