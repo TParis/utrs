@@ -211,12 +211,17 @@ while ($row = mysql_fetch_assoc($result)) {
     }
     echo "</li>\n";
     $i++;
-    if( $i > 100 ) { break; }
+    if( $i > 100 && !isset( $_GET['getall'] ) ) { break; }
 }
-if( $i > 100 ) { echo "<br /><br /><b>Trunctuated to 100 pages</b>"; }
+
+if( $i > 100 && !isset( $_GET['getall'] ) ) { 
+	echo "<br /><br /><b>Trunctuated to 100 pages</b>"; 
+	echo "<br /><i>To see all results, please go to <a href=\"http://toolserver.org".$_SERVER['REQUEST_URI']."&getall=1\">this link</a>";
+}
 echo "</ol>\n";
 
 //Calculate time taken to execute
+
 $exectime = number_format(microtime( 1 ) - $time, 2, '.', '');
 echo "<br /><hr><span style=\"font-size:100%;\">Excecuted in ". $exectime ." seconds.</span>";
 echo "<br />Taken ".number_format((memory_get_usage() / (1024 * 1024)), 2, '.', '')." megabytes of memory to execute.";

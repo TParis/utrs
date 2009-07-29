@@ -140,8 +140,8 @@ unset( $replag );
 $edits = $wpq->contribcount($oldname);
 $return = "<br />";
 echo "<h2>Automated or script-assisted edits for $oldname</h2>";
-if($edits >= 75001) {
-    echo "<br />Script counts not available for users with more than 75K edits, sorry. <br />";
+if($edits >= 100001) {
+    echo "<br />Script counts not available for users with more than 100K edits, sorry. <br />";
 } else {
         $totalsc = 0;
         $query = "select COUNT(*) from revision where rev_user_text = '$name' AND rev_comment LIKE '%WP:TW%';";
