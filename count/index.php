@@ -171,6 +171,13 @@ function PLURAL( $num, $str ) {
 	return $str;
 }
 
+function addZero ( $string ) {
+    $count = 3 - strlen( $string );	
+    for( $i = $count; $i>0; $i-- ) {
+		$string = "0" . $string;
+	}
+	return $string;
+}
 
 //Format numbers based on language
 function numberformat( $num ) {
@@ -250,7 +257,7 @@ $colorcodes = array(
 	5 => '#55FFFF',
 	6 => '#C00000',
 	7 => '#0000C0',
-	8 => '#080',
+	8 => '#008800',
 	9 => '#00C0C0',
 	10 => '#FFAFAF',
 	11 => '#808080',
@@ -260,12 +267,35 @@ $colorcodes = array(
 	15 => '#C000C0',
 	100 => '#75A3D1',
 	101 => '#A679D2',
-	102 => '#080',
-	103 => '#080',
-	104 => '#080',
-	105 => '#080'
+	102 => '#660000',
+	103 => '#000066',
+	104 => '#FAFFAF',
+	105 => '#408345',
+	106 => '#5c8d20',
+	107 => '#e1711d',
+	108 => '#94ef2b',
+	109 => '#756a4a',
+	110 => '#6f1dab',
+	111 => '#301e30',
+	112 => '#5c9d96',
+	113 => '#a8cd8c',
+	114 => '#f2b3f1',
+	115 => '#9b5828',
 );
 
+if( isset( $_GET['debug'] ) ) {
+	foreach( $colorcodes as $color ) {
+		$randhex = array(
+			addZero( rand( '000', '255' ) ),
+			addZero( rand( '000', '255' ) ),
+			addZero( rand( '000', '255' ) ),
+		);
+		print_r($randhex);
+		$hexcolor = implode( "", array_map( 'dechex', $randhex ) );
+		echo "<span style=\"background-color:$color;\">$color</span><br />";
+		echo "<span style=\"background-color:#$hexcolor;\">$hexcolor</span><br /><br />";
+	}
+}
 
 function getReplag() {
 	$query = "SELECT UNIX_TIMESTAMP() - UNIX_TIMESTAMP(rc_timestamp) as replag FROM recentchanges ORDER BY rc_timestamp DESC LIMIT 1";
