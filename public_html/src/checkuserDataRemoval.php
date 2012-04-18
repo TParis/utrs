@@ -17,7 +17,7 @@ try{
 		"comment = 'Closed' AND timestamp < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 6 DAY)";
 
 	// grab appeals and IPs
-	$query = "SELECT appealID, ip FROM appeal WHERE appealID = ANY (" . $closedAppealsSubquery . ")" .
+	$query = "SELECT appealID, ip, appealText, intendedEdits, otherInfo FROM appeal WHERE appealID = ANY (" . $closedAppealsSubquery . ")" .
 				" AND email IS NOT NULL" .
 				" AND ip LIKE '%.%.%.%'";
 		
@@ -48,6 +48,29 @@ try{
 			if(!$update){
 				throw new UTRSDatabaseException(mysql_error($db));
 			}
+			
+			//Kill comments in all text sections also UTRS-93 --DQ
+			//New variables for search and replace
+			$replaceText = array(
+  			'appealText' => $appeal['appealText']  
+  			'intendedEdits' => $appeal['intendedEdits']
+  			'otherInfo' => $appeal['otherInfo']
+      );
+			
+			//Regex seach and replace
+			
+			preg_replace("\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b", "*IP REMOVED*" , $replaceText);
+			preg_replace("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(\d|[1-2]\d|3[0-2]))$", "*IP RANGE REMOVED*" , $replaceText);
+			
+			//Update the DB
+			$query = "UPDATE appeal SET appealText = '" . $replaceText['appealText'] . "', intendedEdits = '" . $replaceText['intendedEdits'] . "', otherInfo = '" . $replaceText['otherInfo'] . "'  WHERE appealID = '" . $appeal['appealID'] . "'";
+			echo "\tRunning query: " . $query . "\n";
+			$update = mysql_query($query, $db);
+			if(!$update){
+				throw new UTRSDatabaseException(mysql_error($db));
+			}
+			//End UTRS-93 Fix --DQ
+			
 			// else
 			$query = "DELETE FROM cuData WHERE appealID = '" . $appeal['appealID'] . "'";
 			echo "\tRunning query: " . $query . "\n";
